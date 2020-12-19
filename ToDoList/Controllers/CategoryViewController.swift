@@ -7,6 +7,7 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class CategoryViewController: SwipeViewController {
 
@@ -19,8 +20,25 @@ class CategoryViewController: SwipeViewController {
         loadCategories()
 //        print(Realm.Configuration.defaultConfiguration.fileURL)
 
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.configureWithOpaqueBackground()
+        navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        navBarAppearance.backgroundColor = UIColor.systemBlue
+        navigationController?.navigationBar.standardAppearance = navBarAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = navBarAppearance
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        guard let navBar = navigationController?.navigationBar else {fatalError()}
+        navBar.backgroundColor = UIColor(hexString: "2F8AFE")
+        navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(UIColor(hexString: "2F8AFE")!, returnFlat: true)]
+
+
+    }
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return categories?.count ?? 1
     }
@@ -28,6 +46,10 @@ class CategoryViewController: SwipeViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         cell.textLabel?.text = categories?[indexPath.row].name ?? "There are no categories"
+        if let color = UIColor(hexString: categories?[indexPath.row].color ?? "No color") {
+            cell.backgroundColor = color
+            cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)    
+        }
         return cell
     }
   
@@ -39,6 +61,7 @@ class CategoryViewController: SwipeViewController {
                 try self.realm.write{
                     let newCategory = Category()
                     newCategory.name = textField.text!
+                    newCategory.color = UIColor.randomFlat().hexValue()
                     self.realm.add(newCategory)
                 }
             } catch {

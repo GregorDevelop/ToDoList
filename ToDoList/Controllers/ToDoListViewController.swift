@@ -7,12 +7,15 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class ToDoListViewController: SwipeViewController {
 
     var realm = try! Realm()
     
     var todoItems: Results<Item>?
+    
+    @IBOutlet weak var searchBar: UISearchBar!
     
     var selectedCategory: Category? {
         didSet {
@@ -25,6 +28,23 @@ class ToDoListViewController: SwipeViewController {
 
 //        print(Realm.Configuration.defaultConfiguration.fileURL)
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        if let hexColor = selectedCategory?.color {
+            title = selectedCategory?.name
+            
+            guard let navBar = navigationController?.navigationBar else {fatalError()}
+            if let navBarColor = UIColor(hexString: selectedCategory!.color) {
+                navBar.backgroundColor = navBarColor
+                navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+                navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(navBarColor, returnFlat: true)]
+                searchBar.barTintColor = navBarColor
+                searchBar.searchTextField.backgroundColor = .white
+            }
+        }
+    }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return todoItems?.count ?? 1
@@ -36,6 +56,12 @@ class ToDoListViewController: SwipeViewController {
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title ?? "There are no rows now"
             cell.accessoryType = item.done ? .checkmark : .none
+            
+            if let color = UIColor(hexString: selectedCategory!.color)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+                cell.backgroundColor = color
+                cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+            }
+            
         }
         return cell
     }
