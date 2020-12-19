@@ -67,4 +67,14 @@ class CategoryViewController: UITableViewController {
         }
     }
     
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "goToItems", sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let destionationVC = segue.destination as! ToDoListViewController
+        if let indexPath = tableView.indexPathForSelectedRow {
+            destionationVC.selectedCategory = categories[indexPath.row]
+        }
+    }
 }
