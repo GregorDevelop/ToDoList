@@ -14,11 +14,16 @@ class ToDoListViewController: UITableViewController {
     
     var todoItems: Results<Item>?
     
+    var selectedCategory: Category? {
+        didSet {
+            loadItems()
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
-//        print(Realm.Configuration.defaultConfiguration.fileURL)
-        loadItems()
+        print(Realm.Configuration.defaultConfiguration.fileURL)
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -55,16 +60,21 @@ class ToDoListViewController: UITableViewController {
         var textField = UITextField()
         let alert = UIAlertController(title: "Add New Item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add item", style: .default) { (action) in
-            do {
-                try self.realm.write{
-                    let newItem = Item()
-                    newItem.title = textField.text!
-                    newItem.createdDate = Date()
-                    self.realm.add(newItem)
+            
+            if let currentCategory = self.selectedCategory {
+                do {
+                    try self.realm.write{
+                        let newItem = Item()
+                        newItem.title = textField.text!
+                        newItem.createdDate = Date()
+                        currentCategory.items.append(newItem)
+                    }
+                } catch {
+                    print(error)
                 }
-            } catch {
-                print(error)
+                
             }
+            
             self.tableView.reloadData()
         }
         alert.addTextField { (alertTextField) in
@@ -76,12 +86,30 @@ class ToDoListViewController: UITableViewController {
     }
     
     func loadItems() {
+        
         do {
-            todoItems = try realm.objects(Item.self)
+            todoItems = selectedCategory?.items.sorted(byKeyPath: "createdDate")
         } catch {
             print(error)
         }
+        tableView.reloadData()
     }
     
 }
 
+extension ToDoListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "createdDate")
+        tableView.reloadData()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loadItems()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+}
